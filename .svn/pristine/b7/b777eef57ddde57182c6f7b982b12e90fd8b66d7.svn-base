@@ -1,0 +1,171 @@
+package cn.bnuz.party.util;
+
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+
+
+import javax.imageio.ImageIO;
+import sun.misc.BASE64Encoder;
+import org.junit.Test;
+import cn.bnuz.party.vo.Party;
+import com.swetake.util.Qrcode;
+
+public class QrCodeUtil<T> {
+	
+	private String content;
+	private String imgpath;
+	private T item;
+	
+	public QrCodeUtil(){
+		
+	}
+	
+	public QrCodeUtil(String content, String imgpath,int partyId,T item) {
+		this.content = content;
+		this.imgpath = imgpath;
+		this.item = item ;
+	}
+
+	public String getImg() {
+		Qrcode qrcode = new Qrcode();
+		int pixoff = 2;
+		qrcode.setQrcodeErrorCorrect('M');
+		// 设置二维码排错率，可选L(7%)、M(15%)、Q(25%)、H(30%)，排错率越高可存储的信息越少，但对二维码清晰度的要求越小
+		qrcode.setQrcodeEncodeMode('B');
+		// N代表数字,A代表字符a-Z,B代表其他字符
+		qrcode.setQrcodeVersion(8);
+		// 设置设置二维码版本，取值范围1-40，值越大尺寸越大，可存储的信息越大
+		BufferedImage bufferedImage = new BufferedImage(150, 150,
+				BufferedImage.TYPE_INT_RGB);
+		Graphics2D gr = bufferedImage.createGraphics();// 创建画笔
+		gr.setBackground(Color.WHITE);
+		gr.clearRect(0, 0, 150, 150); // 通过使用当前绘图表面的背景色进行填充来清除指定的矩形。此操作不使用当前绘图模式
+		gr.setColor(Color.BLACK); // 将此图形上下文的当前颜色设置为指定颜色。使用此图形上下文的所有后续图形操作均使用这个指定的颜色。
+		byte[] contentByte = null;
+		try {
+			contentByte = getContent().getBytes("UTF-8");// 根据内容编码得到二进制数组
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if (contentByte.length > 0 && contentByte.length < 150) {
+			boolean[][] boo = qrcode.calQrcode(contentByte);
+			for (int i = 0; i < boo.length; i++) {
+				for (int j = 0; j < boo.length; j++) {
+					if (boo[j][i]) {
+						gr.fillRect(j * 3 + pixoff, i * 3 + pixoff, 3, 3);
+						// 填充指定的矩形。该矩形左边缘和右边缘分别位于 x 和 x + width - 1。上边缘和下边缘分别位于
+						// y 和 y + height - 1。得到的矩形覆盖 width 像素宽乘以 height
+						// 像素高的区域。使用图形上下文的当前颜色填充该矩形。
+						// x - 要填充矩形的 x 坐标。
+						// y - 要填充矩形的 y 坐标。
+						// width - 要填充矩形的宽度。
+						// height - 要填充矩形的高度。
+
+					}
+				}
+			}
+		} else {
+			System.out.println("溢出");
+		}
+		// Image img = ImageIO.read(new File(ccbPath));//实例化一个Image对象。
+		// gs.drawImage(img, 50, 50, null);
+		gr.dispose(); // 释放此图形的上下文以及它使用的所有系统资源。调用 dispose 之后，就不能再使用 Graphics 对象
+		bufferedImage.flush();
+		File imgFile = new File(getImgpath());
+		if (!imgFile.exists() && !imgFile.isDirectory()) {
+			imgFile.mkdirs();
+        }
+		ByteArrayOutputStream baoStream = new ByteArrayOutputStream();
+		String returnStr = null;
+		
+		// 生成二维码QRCode图片
+		try {
+			// 该类包含一些用来查找 ImageReader 和 ImageWriter 以及执行简单编码和解码的静态便捷方法。
+			ImageIO.write(bufferedImage, "png", imgFile);
+			//生成图片的base64编码
+			ImageIO.write(bufferedImage, "png", baoStream);
+			returnStr = "data:image/png;base64," + new BASE64Encoder().encode(baoStream.toByteArray());
+			
+			// 使用支持给定格式的任意 ImageWriter 将一个图像写入 File。如果已经有一个 File 存在，则丢弃其内容。
+			// im - 要写入的 RenderedImage。
+			// formatName - 包含格式非正式名称的 String。
+			// output - 将在其中写入数据的 File。
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return returnStr;
+		
+	}
+
+	public String getQrCodeString(Party party){
+		String result = null;
+		QrCodeUtil<Party> qrMyCord = new QrCodeUtil<Party>();
+		qrMyCord.setItem(party);
+		qrMyCord.setContent("http://changxiangju.duapp.com/Party/Inparty/" + party.getP_id());
+		qrMyCord.setImgpath("src/main/webapp/resources/static/images/1234.png");
+		try {
+			result = qrMyCord.getImg();
+		} catch (Exception e) {
+			// TODO: handle exception
+			e.printStackTrace();
+		}
+		finally{
+			qrMyCord.deleteImg();
+		}
+		return result;
+	}
+	
+	/**
+	 * @param args
+	 */
+	@Test
+	public void testQrCode() {
+		QrCodeUtil<Party> qrMyCord = new QrCodeUtil<Party>();
+		Party party = new Party();
+		qrMyCord.setItem(party);
+		qrMyCord.setContent("http://changxiangju.duapp.com/Party/Inparty/" + party.getP_id());
+		qrMyCord.setImgpath("src/main/webapp/resources/static/images/1234.png");
+//		System.out.println(qrMyCord.getImg());
+		qrMyCord.getImg();
+//		qrMyCord.deleteImg();
+	}
+
+	public void deleteImg() {
+		File imgFile = new File(getImgpath());
+		imgFile.delete();
+	}
+
+	public String getContent() {
+		return content;
+	}
+
+	public void setContent(String content) {
+		this.content = content;
+	}
+
+	public String getImgpath() {
+		return imgpath;
+	}
+
+	public void setImgpath(String imgpath) {
+		this.imgpath = imgpath;
+	}
+
+	public T getItem() {
+		return item;
+	}
+
+	public void setItem(T item) {
+		this.item = item;
+	}
+
+
+}

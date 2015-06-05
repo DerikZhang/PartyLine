@@ -1,0 +1,308 @@
+package cn.bnuz.party.dao.imp;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Resource;
+
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import cn.bnuz.party.common.APIErrorCode;
+import cn.bnuz.party.common.DaoConstants;
+import cn.bnuz.party.dao.PartyDao;
+import cn.bnuz.party.vo.Party;
+import cn.bnuz.party.vo.Result;
+import cn.bnuz.party.vo.User;
+
+@Repository("partyDao")
+public class PartyDaoImp implements PartyDao{
+
+	@Autowired
+	@Resource(name="sessionFactory")
+	SessionFactory sessionFactory;
+	Session session;
+	
+	private Logger logger = LoggerFactory.getLogger(PartyDaoImp.class);
+	/**
+	 * @author jiaqunz
+	 * @param 
+	 * @return Result
+	 * 
+	 */
+	@Override
+	public Result addParty(Party inParty) {
+		
+		Result result = new Result();
+		Integer partyId = null;
+		session = sessionFactory.openSession();
+		Transaction transaction = session.beginTransaction();
+		
+		try {
+			partyId=(Integer)session.save(inParty);
+			transaction.commit();
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error(e.toString());
+			result.setErrorCode(DaoConstants.PARTY_DAO_SAVE_ERROR);
+			result.setMessage(DaoConstants.MESSAGE_MAP.get(DaoConstants.PARTY_DAO_SAVE_ERROR));
+		}
+		if(partyId!=null||!("".equals(partyId))){
+			result.setErrorCode(DaoConstants.PARTY_DAO_SAVE_SUCCESS);
+			result.setMessage(DaoConstants.MESSAGE_MAP.get(DaoConstants.PARTY_DAO_SAVE_SUCCESS));
+			inParty.setP_id(partyId);
+			Map<String,Object> map = new HashMap<String, Object>();
+			map.put("outParty", inParty);
+			result.setParams(map);
+		}else{
+			result.setErrorCode(DaoConstants.PARTY_DAO_SAVE_ERROR);
+			result.setMessage(DaoConstants.MESSAGE_MAP.get(DaoConstants.PARTY_DAO_SAVE_ERROR));
+		}
+
+		session.close();
+		return result;
+	}
+	/**
+	 * @author jiaqunz
+	 * @return boolean
+	 * @param
+	 * 
+	 */
+	@Override
+	public boolean update(Party inParty) {
+		Result result = new Result();
+		session = sessionFactory.openSession();
+		Transaction transaction = session.beginTransaction();
+		
+		try {
+			session.update(inParty);
+			transaction.commit();
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error(e.toString());
+			result.setErrorCode(DaoConstants.PARTY_DAO_UPDATE_ERROR);
+			result.setMessage(DaoConstants.MESSAGE_MAP.get(DaoConstants.PARTY_DAO_UPDATE_ERROR));
+		}
+		session.close();
+		if(result.getErrorCode()==null){
+//			result.setErrorCode(DaoConstants.PARTY_DAO_UPDATE_SUCCESS);
+//			result.setMessage(DaoConstants.MESSAGE_MAP.get(DaoConstants.PARTY_DAO_UPDATE_SUCCESS));
+			logger.info(DaoConstants.MESSAGE_MAP.get(DaoConstants.PARTY_DAO_UPDATE_SUCCESS));
+			return true;
+		}else return false;
+	}
+	
+	/**
+	 * @author jiaqunz
+	 * @param
+	 * @return Result
+	 */
+	@Override
+	public Result addUserToParty(List<User> userList,Party party) {
+		System.out.println("+++++++++++++++++++++++++++++++");
+		Result result = new Result();
+		Set<User> userSet = party.getUsers();
+		session = sessionFactory.openSession();
+		Transaction transaction = session.beginTransaction();
+		for (User user : userList) {
+			userSet.add(user);
+		}
+		try {
+			party.setUsers(userSet);
+			session.update(party);
+			transaction.commit();
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error(e.toString());
+			result.setErrorCode(DaoConstants.PARTY_DAO_ADD_USER_ERROR);
+			result.setMessage(DaoConstants.MESSAGE_MAP.get(DaoConstants.PARTY_DAO_ADD_USER_ERROR));
+		}
+		if(result.isEmpty()){
+			result.setErrorCode(DaoConstants.PARTY_DAO_ADD_USER_SUCCESS);
+			result.setMessage(DaoConstants.MESSAGE_MAP.get(DaoConstants.PARTY_DAO_ADD_USER_SUCCESS));
+			logger.info(result.getMessage());
+			System.out.println("+++++++++++++++++++++++++++++++");
+			return result;
+		}else{
+			logger.info(result.getMessage());
+			return result;
+		}
+	}
+	
+	@Override
+	public Result getPartyUser(Party party) {
+		
+		int p_id = party.getP_id();
+		List<User> userlist = new ArrayList<User>();
+		Set<User> userSet = new HashSet<User>();
+		Result result = new Result();
+		Map<String , Object> mp = new HashMap<String, Object>();
+		//TODO 获取在party下的user信息，最好能也获取party的信息
+		String hqlGetUser = "select u.u_id,u.phone_number,u.user_name,u.gender,u.age,u.job,u.motto,u.m_status "
+				+ "from user u left join party_user party on party.p_id = " + p_id;
+		session = sessionFactory.openSession();
+		Transaction transaction = session.beginTransaction();
+		try {
+			party = (Party) session.get(Party.class, p_id);
+//			userlist = session.createQuery(hqlGetUser).list();
+			transaction.commit();
+			session.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error(e.toString());
+			result.setErrorCode(DaoConstants.PARTY_DAO_GET_USER_ERROR);
+			result.setMessage(DaoConstants.MESSAGE_MAP.get(DaoConstants.PARTY_DAO_GET_USER_ERROR));
+		}
+		//把user写入party
+//		for (int i = 0; i < userlist.size(); i++) {
+//			userSet.add(userlist.get(i));
+//		}
+//		party.setUsers(userSet);
+		if (result==null||result.isEmpty()||!result.getErrorCode().equals(DaoConstants.PARTY_DAO_GET_USER_ERROR)) {
+			result.setErrorCode(DaoConstants.PARTY_DAO_GET_USER_SUCCESS);
+			result.setMessage(DaoConstants.MESSAGE_MAP.get(DaoConstants.PARTY_DAO_GET_USER_SUCCESS));
+			mp.put("party", party);
+			result.setParams(mp);
+		}
+		
+		logger.info(result.getMessage());
+		
+		return result;
+	}
+	
+	
+	@Override
+	public boolean partyIsExist(Party party) {
+		//init
+		int p_id = party.getP_id();
+		Long account = null ;
+		String hqlString = "select count(*) from Party p where p.p_id = "+ p_id;
+		
+		try {//check user
+			session = sessionFactory.openSession();
+			Transaction transaction = session.beginTransaction();
+			Query query = session.createQuery(hqlString);
+			account	= (Long) query.uniqueResult();
+			transaction.commit();
+			session.close();
+		} catch (Exception e) {
+			logger.error(e.toString());
+			e.printStackTrace();
+		}
+		
+		if(account.SIZE!=0)
+		return account.intValue()>0?true:false;
+		else return false;
+	}
+
+	@Override
+	public Result getPartyInfo(String p_id) {
+		Party party = new Party();
+		Result result = new Result();
+		Map<String, Object> mp = new HashMap<String, Object>();
+		session = sessionFactory.openSession();
+		Transaction transaction = session.beginTransaction();
+		try {
+			party = (Party) session.get(Party.class,Integer.parseInt(p_id));
+			transaction.commit();
+			session.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error(e.toString());
+			result.setErrorCode(DaoConstants.PARTY_DAO_GET_PARTY_INFO_ERROR);
+			result.setMessage(DaoConstants.MESSAGE_MAP.get(DaoConstants.PARTY_DAO_GET_PARTY_INFO_ERROR));
+		}
+		
+		if(result.getErrorCode()==null){
+			result.setErrorCode(DaoConstants.PARTY_DAO_GET_PARTY_INFO_SUCCESS);
+			result.setMessage(DaoConstants.MESSAGE_MAP.get(DaoConstants.PARTY_DAO_GET_PARTY_INFO_SUCCESS));
+			mp.put("party", party);
+			result.setParams(mp);
+		}
+		
+		logger.info(result.getMessage());
+		
+		return result;
+		
+	}
+
+	@Override
+	public Party getPartyByPrimaryKey(int p_id) {
+		session = sessionFactory.openSession();
+		Transaction transaction = session.beginTransaction();
+		Party party = new Party();
+		try {
+			party = (Party) session.get(Party.class, p_id);
+			transaction.commit();
+			session.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error(e.toString());
+		}
+		
+		return party;
+	}
+	
+
+	@Test
+	public void partyDaoTest(){
+		new PartyDaoImp();
+		
+		Result result = new Result();
+		Party party = new Party();
+		party.setP_id(32);
+		Set<User> users = new HashSet<User>();
+//		JdbcTemplate jt = new JdbcTemplate();
+		if(partyIsExist(party)){
+			result = getPartyInfo(String.valueOf(party.getU_id()));
+			party = (Party) result.getParams().get("party");
+			System.out.println("id:"+party.getP_id());
+			System.out.println("party name:"+party.getParty_name());
+			users = party.getUsers();
+			Iterator<User> it = users.iterator();
+			while (it.hasNext()) {
+				System.out.println(it.next()+"");
+			}
+		}
+//		if(partyIsExist(party)){
+//			result = getPartyUser(party);
+//			party = (Party) result.getParams().get("party");
+//		}
+		
+	}
+	@Override
+	public List<Party> getAllParty() {
+		// TODO Auto-generated method stub
+		List<Party> partyList = new ArrayList<Party>();
+		session = sessionFactory.openSession();
+		Transaction transaction = session.beginTransaction();
+		String hqlGetAllParty = "from Party";
+		try {
+			partyList = session.createQuery(hqlGetAllParty).list();
+			transaction.commit();
+			session.close();
+			logger.info(DaoConstants.MESSAGE_MAP.get(DaoConstants.PARTY_DAO_GET_PARTY_LIST_SUCCESS));
+		} catch (Exception e) {
+			// TODO: handle exception
+			e.printStackTrace();
+			logger.error(e.toString());
+			logger.info(DaoConstants.MESSAGE_MAP.get(DaoConstants.PARTY_DAO_GET_PARTY_LIST_FAILURE));
+			partyList = null;
+		}
+		
+		return partyList;
+	}
+}

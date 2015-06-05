@@ -1,0 +1,8 @@
+package cn.bnuz.party.service;
+
+import cn.bnuz.party.vo.User;
+
+public interface UserService {
+
+	String signUser(User inUser,String verificationCode);
+}

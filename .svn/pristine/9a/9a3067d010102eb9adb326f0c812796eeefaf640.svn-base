@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" version="2.5">
+    <!-- 方法1：applicationContext+spring-servlet -->
+    <!-- 方法2：applicationContext+spring-hibernate/mvc/beans+hibernate.cfg.xml -->
+  <context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>classpath*:applicationContext.xml,classpath*:spring-servlet.xml</param-value>
+  </context-param>
+  <listener>
+    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+  </listener>
+  	<!-- Log4j配置 -->
+  		<!-- log4j -->
+<!-- 	<servlet> -->
+<!-- 		<description> -->
+<!-- 		</description> -->
+<!-- 		<display-name>Log4jInit</display-name> -->
+<!-- 		<servlet-name>Log4jInit</servlet-name> -->
+<!-- 		<servlet-class>com.isprint.server.yessafeid.portal.servlet.Log4jInit</servlet-class> -->
+<!-- 		<init-param> -->
+<!-- 			<param-name>log4j</param-name> -->
+<!-- 			<param-value>WEB-INF/classes/log4j.properties</param-value> -->
+<!-- 		</init-param> -->
+<!-- 		<load-on-startup>0</load-on-startup> -->
+<!-- 	</servlet> -->
+<!-- 	<servlet-mapping> -->
+<!-- 		<servlet-name>Log4jInit</servlet-name> -->
+<!-- 		<url-pattern>/Log4jInit</url-pattern> -->
+<!-- 	</servlet-mapping> -->
+	<!-- 加载log4j配置文件 -->
+	<context-param>
+		<param-name>log4jConfigLocation</param-name>
+		<param-value>classpath:log4j.xml</param-value>
+	</context-param>
+	<listener>
+		<listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
+	</listener>
+  <!-- Encoding filter -->
+  <filter>
+    <filter-name>encodingFilter</filter-name>
+    <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+    <init-param>
+      <param-name>encoding</param-name>
+      <param-value>utf-8</param-value>
+    </init-param>
+    <init-param>
+      <param-name>forceEncoding</param-name>
+      <param-value>true</param-value>
+    </init-param>
+  </filter>
+  <filter-mapping>
+    <filter-name>encodingFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+  <!-- hibernate filter -->
+  <filter>
+        <filter-name>openSessionInView</filter-name>
+        <filter-class>
+           org.springframework.orm.hibernate4.support.OpenSessionInViewFilter
+        </filter-class> 
+        <init-param>
+    		<param-name>sessionFactoryBeanName</param-name>
+   			<param-value>sessionFactory</param-value>
+   		</init-param>
+  		<init-param>
+            <param-name>singleSession</param-name>
+            <param-value>true</param-value>           
+        </init-param>
+        <init-param>
+        	<param-name> flushMode </param-name>
+   			<param-value>AUTO </param-value>        
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>openSessionInView</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    
+  <servlet>
+    <servlet-name>appServlet</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    <init-param>
+      <param-name>contextConfigLocation</param-name>
+      <param-value>classpath*:spring-mvc.xml</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>appServlet</servlet-name>
+    <url-pattern>/</url-pattern>
+  </servlet-mapping>
+
+	<error-page>
+		<error-code>404</error-code>
+		<location>/error404</location>
+	</error-page>
+	<error-page>
+		<exception-type>java.lang.Exception</exception-type>
+		<location>/exception</location>
+	</error-page>
+
+</web-app>

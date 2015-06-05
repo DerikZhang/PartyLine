@@ -1,0 +1,214 @@
+package cn.bnuz.party.controller;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import cn.bnuz.party.common.APIErrorCode;
+import cn.bnuz.party.common.ControllerConstants;
+import cn.bnuz.party.common.ServiceConstants;
+import cn.bnuz.party.service.imp.UserServiceImp;
+import cn.bnuz.party.vo.Result;
+import cn.bnuz.party.vo.User;
+import cn.bnuz.party.vo.VerificationCode;
+
+@Controller
+@RequestMapping
+public class UserController {
+
+	private Logger logger = LoggerFactory.getLogger(UserController.class);
+
+	@Resource
+	UserServiceImp userService = new UserServiceImp();
+
+	/**
+	 * @author jiaqunz
+	 * @param inUser
+	 * @param request
+	 * @return Map{errorCode,user}
+	 */
+	@RequestMapping(value={"/sign/Android"})
+	@ResponseBody
+	public Map<String, Object> userSignInWeb(@ModelAttribute("inUser") User inUser,
+			String verificationCode, HttpServletRequest request) {
+		//init
+		User outUser = new User();
+		String userControllerTag = ControllerConstants.DONT_WORK;
+		Map<String,Object> map = new HashMap<String,Object>();
+		String errorCode ;
+		//verify
+		if(inUser.getPhone_number()==null||inUser.getPhone_number()==""){
+			userControllerTag = ControllerConstants.PHONE_NUMBER_IS_NULL;
+		}else if(verificationCode==null||verificationCode.length()!=6){
+			userControllerTag = ControllerConstants.VERIFICATION_CODE_INVALID;
+			if(inUser.getPassword()==null||inUser.getPassword()==""){
+				userControllerTag = ControllerConstants.PASSWORD_IS_NULL;
+			}
+		}else {
+			logger.info("user phone number is "+inUser.getPhone_number());
+			logger.info("user password is "+inUser.getPassword());
+			logger.info("user verification code is "+verificationCode);
+			try {//写入并注册用户
+				userControllerTag = userService.signUser(inUser, verificationCode);
+			} catch (Exception e) {
+				userControllerTag = ControllerConstants.USER_SERVICE_ERROR;
+			}
+		}
+		logger.info("user service tag is " + userControllerTag);
+		
+		if(userControllerTag!=ServiceConstants.USER_SIGN_SERVICE_SUCCESS){
+			errorCode = APIErrorCode.SIGN_FAILURE;
+		}else{
+			errorCode = APIErrorCode.SIGN_SUCCESS;
+			try {//获取用户信息
+				outUser = userService.getUserInfo(inUser);
+			} catch (Exception e) {
+				e.printStackTrace();
+				logger.error(e.toString());
+				logger.info("Get user infomation error");
+			}
+		}
+		//Wrap Data
+		map.put("errorCode", errorCode);
+		map.put("user", outUser);
+		logger.info("Web Sign Test");
+		return map;
+	}
+
+	@RequestMapping(value = "/sign/web")
+	public ModelAndView signInWeb(@ModelAttribute User user,RedirectAttributes attr,
+			@ModelAttribute VerificationCode verCode,HttpServletRequest request){
+		String result = null;
+		String forword = "";
+		try {
+			result = userService.signUser(user, verCode.getVer_code());
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error(e.toString());
+		}
+		if(result.equals(ServiceConstants.USER_SIGN_SERVICE_SUCCESS)){
+			forword = "login";
+		}else{
+			forword = "sign";
+		}
+		
+		return new ModelAndView(forword);
+	}
+
+	/**
+	 * @author jiaqunz
+	 * @param inUser
+	 * @param veriCode
+	 * @param request
+	 * @return map{errorCode,user}
+	 */
+	@RequestMapping(value={"/login/Android"})
+	@ResponseBody
+	public Map<String, Object> userLoginInWeb(@ModelAttribute User inUser,
+			String verificationCode, HttpServletRequest request) {
+		
+		String userControllerTag = null;
+		Map<String, Object> rtnMap = new HashMap<String, Object>();
+		String errorCode ;
+		
+		try {//Login
+			rtnMap = userService.login(inUser,verificationCode);	
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error(e.toString());
+			userControllerTag=ControllerConstants.USER_SERVICE_ERROR;
+		}
+
+		//chk status
+		userControllerTag = (String) rtnMap.get("userServiceTag");
+		if(userControllerTag == ServiceConstants.USER_LOGIN_SUCCESS)
+			errorCode = APIErrorCode.LOGIN_SUCCESS;
+		else errorCode = APIErrorCode.LOGIN_FAILURE;
+
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("errorCode", errorCode);
+		map.put("user", rtnMap.get("user"));
+		
+		return map;
+	}
+	
+	@RequestMapping("/login/web")
+	public ModelAndView loginInWeb(@ModelAttribute User user,@ModelAttribute String partyID){
+		String forword = "";
+		Map<String , Object> loginMap = new HashMap<String, Object>();
+		Map<String , Object> ResultMap = new HashMap<String, Object>();
+		String result = "";
+		
+		try {
+			loginMap = userService.login(user);
+			result = (String) loginMap.get("userServiceTag");
+			user = (User) loginMap.get("user");
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error(e.toString());
+			result = ServiceConstants.USER_LOGIN_ERROR;
+		}
+		if(!result.equals(ServiceConstants.USER_LOGIN_SUCCESS)){
+			forword = "login";	//登录错误，返回登录界面
+			ResultMap.put("phoneNumber", user.getPhone_number());
+			ResultMap.put("password", user.getPassword());
+		}else{
+			ResultMap.put("userID", user.getU_id());
+			ResultMap.put("phoneNumber", user.getPhone_number());
+			if(partyID==null||partyID.equals("")){
+				forword = "member";	//进入用户界面
+			}else{
+				forword = "Party/JoinParty/"+partyID;	//如果有PartyID，则进入party界面
+				ResultMap.put("userID", String.valueOf(user.getU_id()));
+			}
+		}
+		return new ModelAndView(forword,ResultMap);
+	}
+	
+	
+	@RequestMapping("/login")
+	public ModelAndView login(RedirectAttributes attr){
+		logger.info("login controller");
+		return new ModelAndView("login");
+	}
+	
+	@RequestMapping("/sign")
+	public ModelAndView sign(HttpServletRequest request){
+		String forward = "sign";
+		logger.info("sign controller");
+//		String partyID = request.getParameter("partyID");
+//		if(partyID!=null||!partyID.equals("")){
+//			forward += "?partyID="+partyID;
+//		}
+		return new ModelAndView(forward);
+	}
+	
+	@RequestMapping("/member")
+	public ModelAndView intoparty(){
+		logger.info("into member");
+		return new ModelAndView("member");
+	}
+
+	@RequestMapping("/intoparty")
+	public ModelAndView intoParty(HttpServletRequest request){
+		Map<String,Object> map = new HashMap<String,Object>();
+//		map.put("party", request.getAttribute("party"));
+		map = request.getParameterMap();
+		return new ModelAndView("inparty",map);
+//		return "inparty";
+	}
+
+}

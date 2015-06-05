@@ -1,0 +1,43 @@
+package cn.bnuz.party.dao.imp;
+
+import javax.annotation.Resource;
+
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import cn.bnuz.party.dao.VerificatedCodeDao;
+import cn.bnuz.party.vo.VerificationCode;
+
+@Repository("vCodeDao")
+public class VerificatedCodeDaoImp implements VerificatedCodeDao {
+
+	@Autowired
+	@Resource(name = "sessionFactory")
+	SessionFactory sf ;
+	Session session;
+	
+	@Override
+	public void addVCodeByPhone(VerificationCode vCode) {
+
+		vCode.setVer_code("321321");
+		try {
+			
+		session = sf.openSession();
+		Transaction transaction = session.beginTransaction();
+		session.save(vCode);
+//		System.out.println("current:"+sf.getCurrentSession().toString());
+//		System.out.println("openSession:"+sf.openSession().toString());
+//		System.out.println("currentSave:"+session.save(vCode).toString());
+//		System.out.println("openSessionSave:"+session.save(vCode).toString());
+		transaction.commit();
+
+		} catch (Exception e) {
+			System.out.println("WTF");
+		}
+		session.close();
+	}
+
+}

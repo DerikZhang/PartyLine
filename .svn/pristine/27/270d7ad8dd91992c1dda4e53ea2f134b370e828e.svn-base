@@ -1,0 +1,183 @@
+package cn.bnuz.party.controller;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import cn.bnuz.party.common.APIErrorCode;
+import cn.bnuz.party.vo.User;
+import cn.bnuz.party.vo.VerificationCode;
+
+@Controller
+@RequestMapping
+public class UserController {
+
+	private Logger logger = LoggerFactory.getLogger(UserController.class);
+
+	
+	/**
+	 * 
+	 * @param inUser
+	 * @param request
+	 * @return Map{errorCode,user}
+	 */
+	@RequestMapping("/sign/web")
+	@ResponseBody
+	public Map<String, Object> userSignInWeb(@ModelAttribute User inUser,
+			String veriCode,HttpServletRequest request) {
+		//boolean isValid = true;
+		
+		//TODO compare user phone_number is exist or not
+		if (inUser.toString() != null || inUser.toString() != "") {
+			logger.info(inUser.toString());
+			System.out.println(inUser.getName());
+			System.out.println(inUser.toString());
+			System.out.println("Web Sign Test");
+		} else {
+//			isValid = false;
+			logger.error("inUser is null");
+			System.out.println("inUser is null");
+		}
+		
+		//TODO compare verification code
+		VerificationCode vCode = new VerificationCode();
+		vCode.setVer_code("123123");
+//		if(veriCode!=vCode.getVer_code()){
+//			logger.error("Verification Code error");
+//			isValid = false;
+//		}else{
+		//TODO Create user into TABLE					
+//	}
+		
+		//Test data
+		User user = new User();
+		user.setName("Web Sign Test");
+		user.setPhoneNumber("12345");
+
+		//TODO wrap msg to web
+		Map<String, Object> map = new HashMap<String, Object>();
+//		map.put("user", user);
+		map.put("errorCode", APIErrorCode.SIGN_SUCCESS);
+		
+		logger.info("Web Sign Test");
+		return map;
+	}
+
+	/**
+	 * 
+	 * @param inUser
+	 * @param veriCode
+	 * @param request
+	 * @return map{errorCode,user}
+	 */
+	@RequestMapping("/sign/Android")
+	@ResponseBody
+	public Map<String, Object> userSignInAndroid(@ModelAttribute User inUser,
+			String veriCode,HttpServletRequest request) {
+
+		//boolean isValid = true;
+		
+		//TODO compare user phone_number is exist or not
+		if (inUser.toString() != null || inUser.toString() != "") {
+			logger.info(inUser.toString());
+			System.out.println(inUser.getName());
+			System.out.println(inUser.toString());
+			System.out.println("Android Sign Test");
+		} else {
+//			isValid = false;
+			logger.error("inUser is null");
+			System.out.println("inUser is null");
+		}
+		
+		//TODO compare verification code
+		VerificationCode vCode = new VerificationCode();
+		vCode.setVer_code("123123");
+//		if(veriCode!=vCode.getVer_code()){
+//			logger.error("Verification Code error");
+//			isValid = false;
+//		}else{
+		//TODO Create user into TABLE					
+//	}
+		
+		//Test data
+		User user = new User();
+		user.setName("Android Sign Test");
+		user.setPhoneNumber("12345");
+
+		//TODO wrap msg to web
+		Map<String, Object> map = new HashMap<String, Object>();
+//		map.put("user", user);
+		map.put("errorCode", APIErrorCode.SIGN_SUCCESS);
+		
+		logger.info("Android Sign Test");
+		return map;
+	}
+
+	@RequestMapping("/login/web")
+	@ResponseBody
+	public Map<String, Object> userLoginInWeb(@ModelAttribute User inUser,
+			String veriCode,
+			HttpServletRequest request) {
+		
+		System.out.println("Web Login Test");
+		//Test Data
+		User user = new User();
+		user.setName("Web Login Test");
+		user.setPhoneNumber("12345");
+		user.setPassword("123123");
+		
+		//TODO compare verification code or password
+//		if(veriCode!=vCode.getVer_code()){
+//		logger.error("Verification Code error");
+//	}
+//		if(inUser.getPassword()!=user.getPassword()){
+//			logger.error("Password error");
+//		}
+		
+		//TODO wrap msg 
+		Map<String, Object> map = new HashMap<String, Object>();
+//		map.put("user", user);
+		map.put("errorCode", APIErrorCode.LOGIN_SUCCESS);
+
+		logger.info("Web Login Test");
+		return map;
+	}
+
+	@RequestMapping("/login/Android")
+	@ResponseBody
+	public Map<String, Object> userLoginInAndroid(@ModelAttribute User inUser,
+			String veriCode,HttpServletRequest request) {
+		//Test Data
+		User user = new User();
+		user.setName("Android Login Test");
+		user.setPhoneNumber("12345");
+		user.setPassword("123123");
+
+		System.out.println("Android login Test");
+		
+		//TODO compare verification code or password
+//		if(veriCode!=vCode.getVer_code()){
+//		logger.error("Verification Code error");
+//	}
+//		if(inUser.getPassword()!=user.getPassword()){
+//			logger.error("Password error");
+//		}
+		
+		//TODO wrap msg
+		Map<String, Object> map = new HashMap<String, Object>();
+//		map.put("user", user);
+		map.put("errorCode", APIErrorCode.LOGIN_SUCCESS);
+
+		logger.info("Android Login Test");
+		return map;
+	}
+
+}

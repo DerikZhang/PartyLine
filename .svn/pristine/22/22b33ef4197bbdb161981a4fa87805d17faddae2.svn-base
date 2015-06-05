@@ -1,0 +1,149 @@
+package cn.bnuz.party.controller;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import cn.bnuz.party.vo.Party;
+import cn.bnuz.party.vo.User;
+
+@RequestMapping("/Party")
+@Controller
+public class PartyController {
+
+	@RequestMapping("/CreateParty")
+	@ResponseBody
+	public Map<String, Object> createParty(@ModelAttribute Party inParty,
+			String u_id, HttpServletRequest request) {
+
+		// Test Data
+		Party party = new Party();
+		party.setP_id(003);
+		party.setIntroduction("This_is_a_party");
+		party.setFunction(0);
+		party.setLongitude(0.123456);
+		party.setLatitude(0.654321);
+		// party.setQRcode(new Blob());
+
+		// TODO Create the QRCode 
+		
+		//TODO save party into database
+
+		// TODO wrap msg
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("party", party);
+		map.put("errorCode", "13001");
+		return map;
+	}
+
+	@RequestMapping("/JoinParty")
+	@ResponseBody
+	public Map<String, Object> JoinParty(@ModelAttribute User inUser,
+			String partyID, @ModelAttribute Party inParty,
+			HttpServletRequest request) {
+
+		// Test Data
+		User user = new User();
+		user.setU_id(003);
+		user.setPhone_Number("13112213221");
+		Party party = new Party();
+		party.setParty_name("myParty");
+		party.setP_id(001);
+		party.setFunction(0);
+		party.setLatitude(0.123456);
+		party.setLatitude(0.654321);
+
+		// TODO compare the party is exist
+
+		// TODO wrap msg
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("errorCode", "13003");
+		// map.put("party", party);
+		return map;
+	}
+
+	@RequestMapping("/InParty/QueryUser")
+	@ResponseBody
+	public Map<String, Object> getQeuryUser(@ModelAttribute User inUser,
+			String partyID, HttpServletRequest request) {
+		// TODO compare  partyID is exist
+		
+		// Test Data
+		User user = new User();
+		user.setU_id(005);
+		user.setPhone_Number("13112213112");
+		user.setUser_name("WTO");
+		user.setGender("male");
+		user.setAge(20);
+		user.setJob("Senior");
+		user.setMotto("It's me");
+		
+		//TODO query user
+		List<User> userlist = new ArrayList<User>();
+		userlist.add(user);
+		userlist.add(inUser);
+		
+		// TODO wrap msg
+		Map<String, Object> map = new HashMap<String, Object>();
+
+		map.put("userList", userlist);
+		map.put("errorCode",13007);
+		return map;
+	}
+
+	@RequestMapping("/InParty/EditUserInfo")
+	@ResponseBody
+	public Map<String, Object> editUserInfo(@ModelAttribute User inUser,
+			HttpServletRequest request) {
+		//TODO compare user is exist 
+		
+		//Test Data
+		User user = new User();
+		user.setU_id(007);
+		user.setPhone_Number("13112213112");
+		user.setUser_name("WTO");
+		user.setGender("male");
+		user.setAge(20);
+		user.setJob("Senior");
+		user.setMotto("It's me");
+		
+		//TODO save user into database
+		
+		//TODO Wrap msg
+		Map<String, Object> map = new HashMap<String, Object>();
+
+		map.put("user", user);
+		
+		return map;
+	}
+
+	@RequestMapping("/InParty")
+	@ResponseBody
+	public Map<String, Object> InParty(@ModelAttribute String userID,
+			String partyID, HttpServletRequest request) {
+		// TODO compare userID and partyID is exist
+
+		// Test Data
+		Party party = new Party();
+		party.setP_id(005);
+		party.setParty_name("partyNaem");
+		party.setIntroduction("This is another party");
+		party.setLongitude(0.123456);
+		party.setLatitude(0.654321);
+
+		// TODO wrap msg
+		Map<String, Object> map = new HashMap<String, Object>();
+
+		map.put("party", party);
+		return map;
+	}
+
+}

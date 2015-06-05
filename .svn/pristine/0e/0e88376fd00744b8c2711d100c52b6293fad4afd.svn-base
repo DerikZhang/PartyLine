@@ -1,0 +1,28 @@
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ page session="false"%>
+<%@ include file="/WEB-INF/views/taglibs.jsp" %>
+<html>
+<head>
+<title>Home</title>
+<script type="text/javascript" src="/resources/static/js/jquery/jquery-1.7.2.min.js"></script>
+<script type="text/javascript">
+// 		$(documnet).ready(function(){
+// 			$("#btn_ajax").click(function(){
+// 				alert("click");
+// 				htmlobj = $.ajax({url:"${ctx}/sign",async:false});
+// 				$("#divAjax").html(htmlobj.responseText);
+// 			})
+// 		})
+		
+	</script>
+</head>
+<body>
+	<h1>Hello world!</h1>
+	<p>${ctx }</p>
+<%-- 	<p>${ctxpt }</p> --%>
+	<P>The time on the server is ${serverTime}.</P>
+	<div id="divAjax"></div>
+	<button  id="btn_ajax" type="button">getAjax</button>
+	
+</body>
+</html>

@@ -1,0 +1,132 @@
+package cn.bnuz.party.service.imp;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.annotation.Resource;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import cn.bnuz.party.common.DaoConstants;
+import cn.bnuz.party.common.ServiceConstants;
+import cn.bnuz.party.dao.UserDao;
+import cn.bnuz.party.dao.VerificatedCodeDao;
+import cn.bnuz.party.service.UserService;
+import cn.bnuz.party.vo.User;
+import cn.bnuz.party.vo.VerificationCode;
+
+@Repository("userService")
+public class UserServiceImp implements UserService {
+
+	@Autowired
+	@Resource
+	UserDao userDao ;
+	@Autowired
+	@Resource
+	VerificatedCodeDao vCodeDao;
+	Logger logger = LoggerFactory.getLogger(UserServiceImp.class); 
+	
+	/**
+	 * @author jiaqunz
+	 * @time Feb 9 2015
+	 * @param
+	 * @return String of ServiceConstants
+	 */
+	@Override
+	public String signUser(User inUser, String verificationCode) {
+		//init
+		User outUser = new User();
+		VerificationCode verCode = new VerificationCode();
+		verCode.setPhone_number(inUser.getPhone_number());
+		verCode.setVer_code(verificationCode);
+		String userServiceTag =null;
+		
+		//check
+		if (!vCodeDao.getVerCodeByPhoneNumber(inUser.getPhone_number()).equals(verificationCode)) {
+			userServiceTag = ServiceConstants.VERIFICATION_CODE_ERROR;
+		}else if(userDao.userIsExist(inUser)){
+			userServiceTag = ServiceConstants.USER_IS_EXIST;
+		}else {
+			try {//add user
+				userServiceTag = userDao.addUser(inUser);
+			} catch (Exception e) {
+				userServiceTag = ServiceConstants.USER_DAO_ERROR;
+				e.printStackTrace();
+				logger.error(userServiceTag);
+			}
+		}
+		if(userServiceTag == DaoConstants.USER_DAO_SAVE_SUCCESS)
+			userServiceTag = ServiceConstants.USER_SIGN_SERVICE_SUCCESS;
+		logger.info("user service log :" + userServiceTag );
+		return userServiceTag;	
+	}
+
+	/**
+	 * @author jiaqunz
+	 * @time Feb 9 2015
+	 * @param
+	 * @return User
+	 */
+	public User getUserInfo(User inUser) {
+		
+		String userServiceTag = null;
+		User outUser =  new User();
+
+		//check
+		if(inUser.getPhone_number()==null||inUser.getPhone_number()==""){
+			userServiceTag = ServiceConstants.PHONE_NUMBER_IS_NULL;
+		}else {
+			try {//get user infomation
+				outUser = userDao.getUserByPhoneNumber(inUser.getPhone_number());
+			} catch (Exception e) {
+				userServiceTag = ServiceConstants.USER_DAO_ERROR;
+				e.printStackTrace();
+				logger.error(userServiceTag);
+			}
+		}
+		
+		return outUser;
+	}
+
+	/**
+	 * @author jiaqunz
+	 * @time Feb 9 2015
+	 * @param
+	 * @return Map with user and userServiceTag
+	 */
+	public Map<String, Object> login(User inUser, String verificationCode) {
+		
+		Map<String, Object> map = new HashMap<String, Object>();
+		String userServiceTag = null;
+		User user = new User();
+		//check user is exist
+		if (!userDao.userIsExist(inUser)) {
+			userServiceTag = ServiceConstants.USER_IS_NOT_EXIST;
+		} else {
+			try {// get user infomation
+				user = getUserInfo(inUser);
+			} catch (Exception e) {
+				e.printStackTrace();
+				logger.error(e.toString());
+				userServiceTag = ServiceConstants.USER_DAO_ERROR;
+			}
+		}
+		//check password
+		if(!user.getPassword().equals(inUser.getPassword())){
+			userServiceTag = ServiceConstants.USER_PASSWORD_WRONG;
+		}else {
+			userServiceTag = ServiceConstants.USER_LOGIN_SUCCESS;
+		}
+		map.put("userServiceTag", userServiceTag);
+		map.put("user", user);
+		return map;
+	}
+	
+	public Map<String , Object> login(User inUser){
+		return login(inUser,null);
+	}
+	
+}

@@ -1,0 +1,7 @@
+package cn.bnuz.party.dao.imp;
+
+import cn.bnuz.party.dao.PartyDao;
+
+public class PartyDaoImp implements PartyDao{
+
+}

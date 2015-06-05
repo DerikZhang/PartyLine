@@ -1,0 +1,248 @@
+package cn.bnuz.party.controller;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import cn.bnuz.party.common.APIErrorCode;
+import cn.bnuz.party.common.ControllerConstants;
+import cn.bnuz.party.common.ServiceConstants;
+import cn.bnuz.party.service.PartyService;
+import cn.bnuz.party.util.JsonUtil;
+import cn.bnuz.party.vo.Party;
+import cn.bnuz.party.vo.Result;
+import cn.bnuz.party.vo.User;
+
+@RequestMapping("/Party")
+@Controller
+public class PartyController {
+	
+	@Resource
+	PartyService partyService;
+
+	private Logger logger = LoggerFactory.getLogger(PartyController.class);
+	
+	/**
+	 * @author jiaqunz
+	 * @time Feb 9 2015
+	 * @param inParty
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("/CreateParty")
+	@ResponseBody
+	public Result createParty(@ModelAttribute Party inParty,HttpServletResponse response,
+			HttpServletRequest request) {
+		
+		Result result = new Result();
+		
+		//TODO check party is valid or not
+		if(inParty.getU_id()==0){
+			//TODO party invalid
+//			map.put("errorCode", APIErrorCode.CREATE_PARTY_FAILURE);
+//			map.put("message", ControllerConstants.PARTY_ID_MUST_EMPTY);
+			result.setErrorCode(APIErrorCode.CREATE_PARTY_FAILURE);
+			result.setMessage(ControllerConstants.PARTY_ID_MUST_EMPTY);
+		}else {
+			//生成路径
+			String path = request.getSession().getServletContext().getRealPath("/");
+            String dirPath = path + "resources\\static\\images";
+            String filePath = dirPath + "\\" + "PARTY";//+ inParty.getP_id() + ".png";
+			String urlContent = request.getRequestURL().toString().replace(request.getServletPath(), "/");
+            logger.info("save image path:"+filePath);
+            logger.info("url content :" + urlContent);
+			result = partyService.createParty(inParty,filePath,urlContent);
+			// TODO wrap msg
+			if(result.getErrorCode().equals(ServiceConstants.PARTY_SERVICE_CREATE_SUCCESS)){
+				result.setErrorCode(APIErrorCode.CREATE_PARTY_SUCCESS);
+			}
+		}
+		
+		return result;
+	}
+	
+	/**
+	 * @author jiaqunz
+	 * @description Scan qrcode into here. App scan qrcode with userID
+	 * @param userID
+	 * @param p_id
+	 * @param request
+	 * @return
+	 */
+	//TODO show party information and user list 
+	@RequestMapping("/JoinParty/{p_id}")
+	public ModelAndView InParty(@ModelAttribute String userID,
+			@PathVariable String partyID, HttpServletRequest request) {
+		
+		Map<String, Object> map = new HashMap<String, Object>();
+		Result result = new Result();
+		String forword = null;
+		
+		if(userID==null||"".equals(userID)||userID.isEmpty()){
+			result.setErrorCode(ControllerConstants.USER_NULL);
+			result.setMessage(ControllerConstants.MESSAGE_MAP.get(ControllerConstants.USER_NULL));
+			forword = "/exception";
+		}else if(userID.matches("[\\d]+")&&Integer.parseInt(userID)>0){
+			forword = "Party/Inparty/"+partyID+"/"+userID;//TODO 跳转到Inparty界面
+		}else {
+			map.put("partyID", partyID);
+			forword = "/sign";//TODO 跳转到web注册页面前端
+		}
+		
+		return new ModelAndView(forword,map);
+	}
+	
+	/**
+	 * @author jiaqunz
+	 * @Description get party info
+	 * @param userID
+	 * @param partyID
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("/InParty/{partyID}/{userID}")
+	@ResponseBody
+	public Result JoinParty(@PathVariable String userID,
+			@PathVariable String partyID, HttpServletRequest request) {
+		
+		Result result = new Result();
+		
+		//TODO 判断userID及partyID合法性
+		if(userID.isEmpty()||userID==null||"".equals(userID)){
+			result.setErrorCode(ControllerConstants.USER_NULL);
+			result.setMessage(ControllerConstants.MESSAGE_MAP.get(ControllerConstants.USER_NULL));
+		}else if(partyID.isEmpty()||partyID==null||"".equals(partyID)){
+			result.setErrorCode(ControllerConstants.PARTY_NULL);
+			result.setMessage(ControllerConstants.MESSAGE_MAP.get(ControllerConstants.PARTY_NULL));
+		}else{
+			//TODO 如果用户已经在Party里面了，则直接输出用户所在party的相关信息
+			//result = partyService.checkUserInParty(partyID,userID);
+			result = partyService.joinParty(partyID,userID);
+		}
+		
+		if(result.getErrorCode().equals(ServiceConstants.PARTY_SERVICE_JOIN_SUCCESS)){
+			result.setErrorCode(APIErrorCode.JOIN_PARTY_SUCCESS);
+			
+		}else{
+			result.setErrorCode(APIErrorCode.JOIN_PARTY_FAILURE);
+		}
+
+		return result;
+	}
+
+	@RequestMapping("/InParty/QueryUser")
+	@ResponseBody
+	public Map<String, Object> getQeuryUser(@ModelAttribute User inUser,
+			String partyID, HttpServletRequest request) {
+		// TODO compare  partyID is exist
+		
+		// Test Data
+		User user = new User();
+		user.setU_id(005);
+		user.setPhone_number("13112213112");
+		user.setUser_name("WTO");
+		user.setGender("male");
+		user.setAge(20);
+		user.setJob("Senior");
+		user.setMotto("It's me");
+		
+		//TODO query user
+		List<User> userlist = new ArrayList<User>();
+		userlist.add(user);
+		userlist.add(inUser);
+		
+		// TODO wrap msg
+		Map<String, Object> map = new HashMap<String, Object>();
+
+		map.put("userList", userlist);
+		map.put("errorCode",13007);
+		return map;
+	}
+
+	@RequestMapping("/InParty/EditUserInfo")
+	@ResponseBody
+	public Map<String, Object> editUserInfo(@ModelAttribute User inUser,
+			HttpServletRequest request) {
+		//TODO compare user is exist 
+		
+		//Test Data
+		User user = new User();
+		user.setU_id(007);
+		user.setPhone_number("13112213112");
+		user.setUser_name("WTO");
+		user.setGender("male");
+		user.setAge(20);
+		user.setJob("Senior");
+		user.setMotto("It's me");
+		
+		//TODO save user into database
+		
+		//TODO Wrap msg
+		Map<String, Object> map = new HashMap<String, Object>();
+
+		map.put("user", user);
+		
+		return map;
+	}
+
+	
+	
+	@RequestMapping("test")
+	@ResponseBody
+	public Map<String, Object> test(HttpServletRequest request,HttpServletResponse response){
+		
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("url", request.getContextPath());
+		System.out.println("ContextPath:"+request.getContextPath());//ContextPath:/party
+		System.out.println("RequestURL:"+request.getRequestURL());//RequestURL:http://localhost:8080/party/Party/test
+		System.out.println("PathInfo:"+request.getPathInfo());//PathInfo:null
+		System.out.println("Referer:"+request.getHeader("Referer"));//Referer:null
+		System.out.println("ServletPath:"+request.getServletPath());//ServletPath:/Party/test
+		System.out.println("QueryString:"+request.getQueryString());//QueryString:null
+		System.out.println("HOST:"+request.getRemoteHost());//HOST:0:0:0:0:0:0:0:1
+		System.out.println(request.getLocalAddr());
+		System.out.println("RequestURL:"+request.getRequestURL().toString().replace(request.getServletPath(), "/"));
+		
+		return map;
+	}
+
+	
+	@Test
+	public void ftest(){
+		HttpServletRequest request = null;
+		Result result = JoinParty("1", "32",request);
+		System.out.println("errorCode :"+result.getErrorCode());
+		System.out.println("message:"+result.getMessage());
+		Party party= (Party) result.getParams().get("party");
+		System.out.println("party id :"+ party.getP_id());
+		System.out.println("party name :"+party.getParty_name());
+		Set<User> users = new HashSet<User>();
+		users = party.getUsers();
+		Iterator<User> it = users.iterator();
+		while (it.hasNext()) {
+			System.out.println("party users:"+it.next()+"");
+		}
+		
+		
+	}
+	
+}

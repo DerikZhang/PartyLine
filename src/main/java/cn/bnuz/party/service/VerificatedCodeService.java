@@ -1,0 +1,11 @@
+package cn.bnuz.party.service;
+
+import cn.bnuz.party.vo.VerificationCode;
+
+public interface VerificatedCodeService {
+
+	void addVCodeByPhone(VerificationCode vCode);
+
+	void sendVerCodeToUser(VerificationCode vCode);
+
+}

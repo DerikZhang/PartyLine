@@ -1,0 +1,13 @@
+<!DOCTYPE hibernate-configuration PUBLIC  
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"  
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+
+<hibernate-configuration>
+	<session-factory>
+		<property name="javax.persistence.validation.mode">none</property>
+		<!-- 引入需要映射的类 -->
+		<mapping class="cn.bnuz.party.vo.VerificationCode" />
+		<mapping class="cn.bnuz.party.vo.Party" />
+		<mapping class="cn.bnuz.party.vo.User" />
+	</session-factory>
+</hibernate-configuration>  

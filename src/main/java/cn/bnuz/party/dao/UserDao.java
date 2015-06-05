@@ -1,0 +1,18 @@
+package cn.bnuz.party.dao;
+
+import cn.bnuz.party.vo.Result;
+import cn.bnuz.party.vo.User;
+
+public interface UserDao {
+
+	boolean userIsExist(User inUser);
+
+	String addUser(User inUser);
+
+	User getUserByPhoneNumber(String phone_Number);
+
+	User getUserByPrimaryKey(int u_id);
+
+	Result updateUser(User inUser);
+
+}
